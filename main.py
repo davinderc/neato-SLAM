@@ -19,12 +19,14 @@ f = serial.Serial(port='/dev/ttyUSB0',
                   timeout=0)
 
 def update_plot(measurements):
-    img = np.zeros((200, 200, 3), np.uint8)
+    print("IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
+    img = np.zeros((1200, 1200, 3), dtype=np.uint8)
 
     for angle in range(0,360):
-        x = img.shape[1] / 2 + (int(-measurements[angle] * math.sin(math.radians(angle))) / (6000 / img.shape[0]))
-        y = img.shape[0] / 2 - (int(measurements[angle] * math.cos(math.radians(angle))) / (6000 / img.shape[1]))
-        img[y, x] = [m[1], 255, 255]
+        x = int(img.shape[1] / 2 + (int(-measurements[angle] * math.sin(math.radians(angle))) / (6000 / img.shape[0])))
+        y = int(img.shape[0] / 2 - (int(measurements[angle] * math.cos(math.radians(angle))) / (6000 / img.shape[1])))
+        img[y, x] = [255, 255, 255]
+
     cv2.imshow("meas", img)
     cv2.waitKey(1)
 
@@ -55,11 +57,13 @@ def decode_string(string):
         print("O - ",)
     if data[5] & 0x40:
         print("NOT GOOD")
-    print("Speed: ", speed, ", angle: ", angle, ", dist: ", dist_mm, ", quality: ", quality)
+    #print("Speed: ", speed, ", angle: ", angle, ", dist: ", dist_mm, ", quality: ", quality)
     # print "Checksum: ", checksum(data), ", from packet: ", in_checksum
     outfile.write(string + "\n")
     print("-----------")
+    global rotationCounter
     rotationCounter += 1
+    print(rotationCounter)
     if (not (angle > 359 or angle < 0)):
         measurements[angle] = min(5999, int(dist_mm))
 
