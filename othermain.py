@@ -23,6 +23,8 @@ f = serial.Serial(
 measurements = np.zeros((360, 3), np.float64)
 
 global ss
+global rotationCounter
+rotationCounter = 0
 ss = time.time()
 
 
@@ -68,7 +70,7 @@ def decode_string(string, measurements):
         print(time.time() - ss)
         ss = time.time()
         update_plot(measurements)
-
+    rotationCounter += 1
 
 def update_plot(measurements):
     img = np.zeros((200, 200, 3), np.uint8)

@@ -8,6 +8,8 @@ import cv2
 # Some settings and variables
 outfile = open("outfile.txt", "w+")
 print("Start")
+rotationCounter = 0
+measurements = np.zeros((360, 1), np.float64)
 
 f = serial.Serial(port='/dev/ttyUSB0',
                   baudrate=115200,
@@ -19,9 +21,9 @@ f = serial.Serial(port='/dev/ttyUSB0',
 def update_plot(measurements):
     img = np.zeros((200, 200, 3), np.uint8)
 
-    for angle, m in enumerate(measurements):
-        x = img.shape[1] / 2 + (int(-m[0] * math.sin(math.radians(angle))) / (6000 / img.shape[0]))
-        y = img.shape[0] / 2 - (int(m[0] * math.cos(math.radians(angle))) / (6000 / img.shape[1]))
+    for angle in range(0,360):
+        x = img.shape[1] / 2 + (int(-measurements[angle] * math.sin(math.radians(angle))) / (6000 / img.shape[0]))
+        y = img.shape[0] / 2 - (int(measurements[angle] * math.cos(math.radians(angle))) / (6000 / img.shape[1]))
         img[y, x] = [m[1], 255, 255]
     cv2.imshow("meas", img)
     cv2.waitKey(1)
@@ -57,6 +59,13 @@ def decode_string(string):
     # print "Checksum: ", checksum(data), ", from packet: ", in_checksum
     outfile.write(string + "\n")
     print("-----------")
+    rotationCounter += 1
+    if (not (angle > 359 or angle < 0)):
+        measurements[angle] = min(5999, int(dist_mm))
+
+    if rotationCounter == 100:
+        rotationCounter = 0
+        update_plot(measurements)
 
 
 byte = f.read(1)
