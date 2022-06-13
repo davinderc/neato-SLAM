@@ -2,6 +2,8 @@
 import serial
 import time
 import math
+import numpy as np
+import cv2
 
 # Some settings and variables
 outfile = open("outfile.txt", "w+")
@@ -27,8 +29,7 @@ def update_plot(measurements):
 
 
 def decode_string(string):
-    print
-    string
+    print(string)
     data = []
 
     for byte in string.strip("\n").split(":")[:21]:
@@ -51,8 +52,7 @@ def decode_string(string):
     else:
         print("O - ",)
     if data[5] & 0x40:
-        print
-        "NOT GOOD"
+        print("NOT GOOD")
     print("Speed: ", speed, ", angle: ", angle, ", dist: ", dist_mm, ", quality: ", quality)
     # print "Checksum: ", checksum(data), ", from packet: ", in_checksum
     outfile.write(string + "\n")
