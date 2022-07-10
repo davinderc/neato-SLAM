@@ -1,17 +1,23 @@
 #!/usr/bin/python
 import serial
-import time
 import math
 import numpy as np
 import cv2
+import platform
 
 # Some settings and variables
 outfile = open("outfile.txt", "w+")
 print("Start")
 rotationCounter = 0
 measurements = np.zeros((360, 1), np.float64)
-
-f = serial.Serial(port='/dev/ttyUSB0',
+if(platform.system() == 'Windows'):
+    serialPort = 'COM4'
+elif(platform.system() == 'Linux'):
+    serialPort = '/dev/ttyUSB0'
+else:
+    serialPort = 'some Mac address'
+print(serialPort)
+f = serial.Serial(port=serialPort,
                   baudrate=115200,
                   parity=serial.PARITY_NONE,
                   stopbits=serial.STOPBITS_ONE,
@@ -28,7 +34,7 @@ def update_plot(measurements):
         img[y, x] = [255, 255, 255]
 
     cv2.imshow("meas", img)
-    cv2.waitKey(1)
+    #cv2.waitKey(1)
 
 
 
@@ -63,11 +69,11 @@ def decode_string(string):
     print("-----------")
     global rotationCounter
     rotationCounter += 1
-    print(rotationCounter)
+    print(f"####### rotations: {rotationCounter}")
     if (not (angle > 359 or angle < 0)):
         measurements[angle] = min(5999, int(dist_mm))
 
-    if rotationCounter == 100:
+    if rotationCounter == 10:
         rotationCounter = 0
         update_plot(measurements)
 
