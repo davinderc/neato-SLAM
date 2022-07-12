@@ -1,11 +1,14 @@
 #!/usr/bin/python
 import serial
-import time
 import math
 import numpy as np
 import cv2
 
+from LidarDataReader import LidarDataReader
+from SerialReader import SerialReader
+
 # Some settings and variables
+
 outfile = open("outfile.txt", "w+")
 print("Start")
 rotationCounter = 0
@@ -72,14 +75,39 @@ def decode_string(string):
         update_plot(measurements)
 
 
-byte = f.read(1)
-started = False
-string = "Start"
+serialReader = SerialReader()
+lidarDataReader = LidarDataReader()
+
 while True:
-    if byte != '':
+    dataLine = serialReader.readbytes(22)
+    parsedDataLine = LidarDataReader.parseDataLine(dataLine)
+    data, dataUnit = LidarDataReader.decodeLidarDataLine(parsedDataLine)
+
+    if data[5] & 0x80:
+        print("X - ",)
+    else:
+        print("O - ",)
+    if data[5] & 0x40:
+        print("NOT GOOD")
+    #print("Speed: ", speed, ", angle: ", angle, ", dist: ", dist_mm, ", quality: ", quality)
+    # print "Checksum: ", checksum(data), ", from packet: ", in_checksum
+    outfile.write(string + "\n")
+    print("-----------")
+    global rotationCounter
+    rotationCounter += 1
+    print(rotationCounter)
+    if (not (dataUnit.angle > 359 or dataUnit.angle < 0)):
+        measurements[dataUnit.angle] = min(5999, int(dataUnit.dist_mm))
+
+    if rotationCounter == 100:
+        rotationCounter = 0
+        update_plot(measurements)
+
+
+    if dataLine[0] != '':
         #print(byte)
-        enc = (byte.hex() + ":")
-        if enc == "fa:":
+        encodedFirstByte = (dataLine[0].hex() + ":")
+        if encodedFirstByte == "fa:":
             if started:
                 try:
                     decode_string(string)
@@ -89,7 +117,7 @@ while True:
             started = True
             string = "fa:"
         elif started:
-            string += enc
+            string += encodedFirstByte
         else:
             print("Waiting for start")
 
