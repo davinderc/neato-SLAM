@@ -17,12 +17,12 @@ elif(platform.system() == 'Linux'):
 else:
     serialPort = 'some Mac address'
 print(serialPort)
-f = serial.Serial(port=serialPort,
-                  baudrate=115200,
-                  parity=serial.PARITY_NONE,
-                  stopbits=serial.STOPBITS_ONE,
-                  bytesize=serial.EIGHTBITS,
-                  timeout=0)
+serialStream = serial.Serial(port=serialPort,
+                             baudrate=115200,
+                             parity=serial.PARITY_NONE,
+                             stopbits=serial.STOPBITS_ONE,
+                             bytesize=serial.EIGHTBITS,
+                             timeout=0)
 
 def updatePlot(measurements):
     #print("IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
@@ -81,14 +81,14 @@ def decodeSingleLine(dataline):
 
 
 numberBytesToRead = 1
-byte = f.read(numberBytesToRead)
+singleByte = serialStream.read(numberBytesToRead)
 started = False
 dataline = "Start"
 STARTBYTE = "fa:"
 EMPTYBYTE = b''
 while True:
-    if byte != EMPTYBYTE:
-        enc = (byte.hex() + ":")
+    if singleByte != EMPTYBYTE:
+        enc = (singleByte.hex() + ":")
         if enc == STARTBYTE:
             if started:
                 try:
@@ -103,6 +103,6 @@ while True:
         else:
             print("Waiting for start")
 
-    byte = f.read(1)
+    singleByte = serialStream.read(1)
 outfile.close()
 print("End")
