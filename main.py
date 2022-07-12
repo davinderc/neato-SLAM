@@ -5,7 +5,11 @@ import numpy as np
 import cv2
 import platform
 
+from LidarDataReader import LidarDataReader
+from SerialReader import SerialReader
+
 # Some settings and variables
+
 outfile = open("outfile.txt", "w+")
 print("Start")
 rotationCounter = 0
@@ -86,10 +90,18 @@ started = False
 dataline = "Start"
 STARTBYTE = "fa:"
 EMPTYBYTE = b''
+serialReader = SerialReader()
+lidarDataReader = LidarDataReader()
+
 while True:
-    if singleByte != EMPTYBYTE:
-        enc = (singleByte.hex() + ":")
-        if enc == STARTBYTE:
+    dataLine = serialReader.readbytes(22)
+    parsedDataLine = LidarDataReader.parseDataLine(dataLine)
+    data, dataUnit = LidarDataReader.decodeLidarDataLine(parsedDataLine)
+
+    if dataLine[0] != EMPTYBYTE:
+        #print(byte)
+        encodedFirstByte = (dataLine[0].hex() + ":")
+        if encodedFirstByte == STARTBYTE:
             if started:
                 try:
                     decodeSingleLine(dataline)
@@ -97,9 +109,9 @@ while True:
                     print(e)
 
             started = True
-            dataline = enc
+            dataline = encodedFirstByte
         elif started:
-            dataline += enc
+            dataline += encodedFirstByte
         else:
             print("Waiting for start")
 
