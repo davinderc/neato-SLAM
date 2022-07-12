@@ -25,8 +25,8 @@ f = serial.Serial(port=serialPort,
                   timeout=0)
 
 def update_plot(measurements):
-    print("IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
-    img = np.zeros((1200, 1200, 3), dtype=np.uint8)
+    #print("IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
+    img = np.zeros((1506, 1506, 3), dtype=np.uint8)
 
     for angle in range(0,360):
         x = int(img.shape[1] / 2 + (int(-measurements[angle] * math.sin(math.radians(angle))) / (6000 / img.shape[0])))
@@ -38,11 +38,10 @@ def update_plot(measurements):
 
 
 
-def decode_string(string):
-    print(string)
+def decode_string(dataline):
     data = []
 
-    for byte in string.strip("\n").split(":")[:21]:
+    for byte in dataline.strip("\n").split(":")[:21]:
         if byte != "":
             data.append(int(byte, 16))
 
@@ -58,15 +57,18 @@ def decode_string(string):
     quality = data[6] | (data[7] << 8)
 
     if data[5] & 0x80:
+        #pass
         print("X - ",)
     else:
+        #pass
         print("O - ",)
     if data[5] & 0x40:
+        #pass
         print("NOT GOOD")
-    #print("Speed: ", speed, ", angle: ", angle, ", dist: ", dist_mm, ", quality: ", quality)
+    print("Speed: ", speed, ", angle: ", angle, ", dist: ", dist_mm, ", quality: ", quality)
     # print "Checksum: ", checksum(data), ", from packet: ", in_checksum
-    outfile.write(string + "\n")
-    print("-----------")
+    outfile.write(dataline + "\n")
+    #rint("-----------")
     global rotationCounter
     rotationCounter += 1
     print(f"####### rotations: {rotationCounter}")
@@ -78,24 +80,26 @@ def decode_string(string):
         update_plot(measurements)
 
 
-byte = f.read(1)
+numberBytesToRead = 1
+byte = f.read(numberBytesToRead)
 started = False
-string = "Start"
+dataline = "Start"
+STARTBYTE = "fa:"
+EMPTYBYTE = b''
 while True:
-    if byte != '':
-        #print(byte)
+    if byte != EMPTYBYTE:
         enc = (byte.hex() + ":")
-        if enc == "fa:":
+        if enc == STARTBYTE:
             if started:
                 try:
-                    decode_string(string)
+                    decode_string(dataline)
                 except Exception as e :
                     print(e)
 
             started = True
-            string = "fa:"
+            dataline = enc
         elif started:
-            string += enc
+            dataline += enc
         else:
             print("Waiting for start")
 
