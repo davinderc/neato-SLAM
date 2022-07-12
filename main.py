@@ -24,7 +24,7 @@ f = serial.Serial(port=serialPort,
                   bytesize=serial.EIGHTBITS,
                   timeout=0)
 
-def update_plot(measurements):
+def updatePlot(measurements):
     #print("IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
     img = np.zeros((1506, 1506, 3), dtype=np.uint8)
 
@@ -38,7 +38,7 @@ def update_plot(measurements):
 
 
 
-def decode_string(dataline):
+def decodeSingleLine(dataline):
     data = []
 
     for byte in dataline.strip("\n").split(":")[:21]:
@@ -77,7 +77,7 @@ def decode_string(dataline):
 
     if rotationCounter == 10:
         rotationCounter = 0
-        update_plot(measurements)
+        updatePlot(measurements)
 
 
 numberBytesToRead = 1
@@ -92,7 +92,7 @@ while True:
         if enc == STARTBYTE:
             if started:
                 try:
-                    decode_string(dataline)
+                    decodeSingleLine(dataline)
                 except Exception as e :
                     print(e)
 
