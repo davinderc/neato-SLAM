@@ -8,6 +8,9 @@ import platform
 # Some settings and variables
 outfile = open("outfile.txt", "w+")
 print("Start")
+indexOffset = 0xa0
+invalidDataBitMask = 0x80
+inferiorStrengthDataBitMask = 0x40
 rotationCounter = 0
 measurements = np.zeros((360, 1), np.float64)
 if(platform.system() == 'Windows'):
@@ -26,7 +29,7 @@ serialStream = serial.Serial(port=serialPort,
 
 def updatePlot(measurements):
     #print("IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
-    img = np.zeros((1506, 1506, 3), dtype=np.uint8)
+    img = np.zeros((500, 500, 3), dtype=np.uint8)
 
     for angle in range(0,360):
         x = int(img.shape[1] / 2 + (int(-measurements[angle] * math.sin(math.radians(angle))) / (6000 / img.shape[0])))
@@ -34,7 +37,7 @@ def updatePlot(measurements):
         img[y, x] = [255, 255, 255]
 
     cv2.imshow("meas", img)
-    #cv2.waitKey(1)
+    cv2.waitKey(1)
 
 
 
@@ -45,35 +48,37 @@ def decodeSingleLine(dataline):
         if byte != "":
             data.append(int(byte, 16))
 
-    start = data[0]
-    idx = data[1] - 0xa0
+    startByte = data[0]
+    indexByte = data[1] - indexOffset
     speed = float(data[2] | (data[3] << 8)) / 64.0
-    in_checksum = data[-2] + (data[-1] << 8)
+    in_checksum = data[-2] | (data[-1] << 8)
 
     # first data package (4 bytes after header)
-    angle = idx * 4 + 0
+    angle = indexByte * 4 + 0
     angle_rad = angle * math.pi / 180.
-    dist_mm = data[4] | ((data[5] & 0x1f) << 8)
-    quality = data[6] | (data[7] << 8)
+    # Next line used 0x1f to get first 5 bits of data[5], but first 6 bits should have been used so 0x3f
+    # distance_mm = data[4] | ((data[5] & 0x1f) << 8)
+    distance_mm = data[4] | ((data[5] & 0x3f) << 8)
+    signalStrength = data[6] | (data[7] << 8)
 
-    if data[5] & 0x80:
+    if data[5] & invalidDataBitMask:
         #pass
-        print("X - ",)
+        print("X - ", data[5])
     else:
         #pass
         print("O - ",)
-    if data[5] & 0x40:
+    if data[5] & inferiorStrengthDataBitMask:
         #pass
-        print("NOT GOOD")
-    print("Speed: ", speed, ", angle: ", angle, ", dist: ", dist_mm, ", quality: ", quality)
+        print("inferior signal strength")
+    print("Speed: ", speed, ", angle: ", angle, ", dist: ", distance_mm, ", Signal Strength: ", signalStrength)
     # print "Checksum: ", checksum(data), ", from packet: ", in_checksum
     outfile.write(dataline + "\n")
-    #rint("-----------")
+    # print("-----------")
     global rotationCounter
     rotationCounter += 1
     print(f"####### rotations: {rotationCounter}")
     if (not (angle > 359 or angle < 0)):
-        measurements[angle] = min(5999, int(dist_mm))
+        measurements[angle] = min(5999, int(distance_mm))
 
     if rotationCounter == 10:
         rotationCounter = 0
