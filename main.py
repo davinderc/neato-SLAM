@@ -8,6 +8,9 @@ import platform
 # Some settings and variables
 outfile = open("outfile.txt", "w+")
 print("Start")
+invalids = 0
+valids = 0
+weaks = 0
 indexOffset = 0xa0
 invalidDataBitMask = 0x80
 inferiorStrengthDataBitMask = 0x40
@@ -42,6 +45,9 @@ def updatePlot(measurements):
 
 
 def decodeSingleLine(dataline):
+    global invalids
+    global valids
+    global weaks
     data = []
 
     for byte in dataline.strip("\n").split(":")[:21]:
@@ -62,27 +68,31 @@ def decodeSingleLine(dataline):
     signalStrength = data[6] | (data[7] << 8)
 
     if data[5] & invalidDataBitMask:
+        invalids += 1
         #pass
         print("X - ", data[5])
     else:
+        valids += 1
         #pass
         print("O - ",)
     if data[5] & inferiorStrengthDataBitMask:
         #pass
         print("inferior signal strength")
+        weaks += 1
     print("Speed: ", speed, ", angle: ", angle, ", dist: ", distance_mm, ", Signal Strength: ", signalStrength)
     # print "Checksum: ", checksum(data), ", from packet: ", in_checksum
     outfile.write(dataline + "\n")
     # print("-----------")
     global rotationCounter
     rotationCounter += 1
-    print(f"####### rotations: {rotationCounter}")
+    # print(f"####### rotations: {rotationCounter}")
     if (not (angle > 359 or angle < 0)):
         measurements[angle] = min(5999, int(distance_mm))
 
     if rotationCounter == 10:
         rotationCounter = 0
         updatePlot(measurements)
+        print(f"valids {valids}, invalids {invalids}, weaks {weaks}")
 
 
 numberBytesToRead = 1
